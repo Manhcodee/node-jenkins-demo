@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: node-jenkins-demo
+  namespace: node-demo     # <-- thêm dòng này nếu dùng namespace riêng
 spec:
   replicas: 1
   selector:
