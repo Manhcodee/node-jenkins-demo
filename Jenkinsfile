@@ -1,28 +1,43 @@
 pipeline {
-    agent any
-
+    agent {
+        kubernetes {
+            label 'kaniko-agent'
+            defaultContainer 'kaniko'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    some-label: kaniko
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    command:
+      - cat
+    tty: true
+    volumeMounts:
+      - name: kaniko-secret
+        mountPath: /kaniko/.docker
+  restartPolicy: Never
+  volumes:
+    - name: kaniko-secret
+      secret:
+        secretName: ghcr-secret
+"""
+        }
+    }
     stages {
-        stage('Checkout') {
+        stage('Build and Push Docker Image') {
             steps {
-                git branch: 'main', url: 'https://github.com/Manhcodee/node-jenkins-demo.git'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh 'docker build -t node-jenkins-demo:latest .'
-                }
-            }
-        }
-
-        stage('Run Container (Local)') {
-            steps {
-                script {
-                    // Xóa container cũ nếu tồn tại
-                    sh 'docker rm -f node-jenkins-demo || true'
-                    // Chạy container mới
-                    sh 'docker run -d -p 3000:3000 --name node-jenkins-demo node-jenkins-demo:latest'
+                container('kaniko') {
+                    sh '''
+                    /kaniko/executor \
+                      --dockerfile=Dockerfile \
+                      --context=dir://$WORKSPACE \
+                      --destination=ghcr.io/Manhcodee/node-jenkins-demo:latest \
+                      --cleanup
+                    '''
                 }
             }
         }
