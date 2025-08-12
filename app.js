@@ -1,7 +1,11 @@
 const http = require('http');
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end('Hello from Jenkins & Kubernetes!\n');
-}).listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+const requestHandler = (req, res) => {
+  res.end('Hello from Node.js Jenkins Demo!');
+};
+
+const server = http.createServer(requestHandler);
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
