@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: node-jenkins-demo
-  namespace: node-demo     # <-- thêm dòng này nếu dùng namespace riêng
+  namespace: node-demo
 spec:
   replicas: 1
   selector:
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: node-jenkins-demo
-        image: ghcr.io/Manhcodee/node-jenkins-demo:latest
+        image: ghcr.io/manhcodee/node-jenkins-demo:latest
         ports:
         - containerPort: 3000
       imagePullSecrets:

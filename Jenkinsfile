@@ -1,44 +1,31 @@
 pipeline {
-    agent {
-        kubernetes {
-            label 'kaniko-agent'
-            defaultContainer 'kaniko'
-            yaml """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    some-label: kaniko
-spec:
-  containers:
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest
-    command:
-      - cat
-    tty: true
-    volumeMounts:
-      - name: kaniko-secret
-        mountPath: /kaniko/.docker
-  restartPolicy: Never
-  volumes:
-    - name: kaniko-secret
-      secret:
-        secretName: ghcr-secret
-"""
-        }
+    agent any
+    environment {
+        IMAGE_NAME = "ghcr.io/manhcodee/node-jenkins-demo"
+        IMAGE_TAG = "v${BUILD_NUMBER}"
     }
     stages {
-        stage('Build and Push Docker Image') {
+        stage('Checkout') {
             steps {
-                container('kaniko') {
-                    sh '''
-                    /kaniko/executor \
-                      --dockerfile=Dockerfile \
-                      --context=dir://$WORKSPACE \
-                      --destination=ghcr.io/Manhcodee/node-jenkins-demo:latest \
-                      --cleanup
-                    '''
+                git branch: 'main', url: 'https://github.com/manhcodee/node-jenkins-demo.git'
+            }
+        }
+        stage('Build Docker image') {
+            steps {
+                script {
+                    docker.withRegistry('https://ghcr.io', 'ghcr-creds') {
+                        def app = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                        app.push()
+                        app.push("latest")
+                    }
                 }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh """
+                kubectl set image deployment/node-jenkins-demo node-jenkins-demo=${IMAGE_NAME}:${IMAGE_TAG} -n default
+                """
             }
         }
     }
