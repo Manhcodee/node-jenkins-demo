@@ -12,7 +12,6 @@ spec:
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
-      command: ["sh", "-c", "while true; do sleep 30; done;"]  # giữ container chạy ổn định
       tty: true
       volumeMounts:
         - name: docker-config
