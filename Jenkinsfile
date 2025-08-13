@@ -10,6 +10,9 @@ metadata:
 spec:
   serviceAccountName: jenkins
   containers:
+    - name: jnlp
+      image: jenkins/inbound-agent:latest
+      args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
       tty: true
@@ -37,7 +40,9 @@ spec:
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        checkout scm
+      }
     }
 
     stage('Build & Push (Kaniko)') {
@@ -49,7 +54,6 @@ spec:
               --dockerfile="$WORKSPACE/Dockerfile" \
               --destination=${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
               --destination=${REGISTRY}/${IMAGE_REPO}:${BUILD_NUMBER} \
-              --skip-tls-verify \
               --cache=true
           '''
         }
@@ -68,6 +72,18 @@ spec:
           '''
         }
       }
+    }
+  }
+
+  post {
+    always {
+      echo 'Pipeline completed.'
+    }
+    success {
+      echo 'Pipeline succeeded!'
+    }
+    failure {
+      echo 'Pipeline failed. Check logs for details.'
     }
   }
 }
