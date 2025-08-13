@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-jenkins-demo
+  namespace: node-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-jenkins-demo
+  template:
+    metadata:
+      labels:
+        app: node-jenkins-demo
+    spec:
+      containers:
+        - name: node-jenkins-demo
+          image: ghcr.io/manhcodee/node-jenkins-demo:latest
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet: { path: "/", port: 3000 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: "/", port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: ghcr-secret
