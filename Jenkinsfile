@@ -8,7 +8,7 @@ metadata:
   labels:
     jenkins: kaniko
 spec:
-  serviceAccountName: default
+  serviceAccountName: jenkins
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
