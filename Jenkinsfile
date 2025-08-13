@@ -19,7 +19,7 @@ spec:
           mountPath: /kaniko/.docker/
     - name: kubectl
       image: bitnami/kubectl:latest
-      command: ["sleep", "infinity"]
+      command: ["/busybox/sh", "-c", "sleep 3600"]
       tty: true
   volumes:
     - name: docker-config
