@@ -12,6 +12,7 @@ spec:
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
+      command: ["sh", "-c", "while true; do sleep 30; done;"]  # giữ container chạy ổn định
       tty: true
       volumeMounts:
         - name: docker-config
@@ -60,17 +61,10 @@ spec:
       steps {
         container('kubectl') {
           sh '''
-            # Tạo namespace nếu chưa có (idempotent)
             kubectl apply -f k8s/namespace.yaml
-
-            # Triển khai/ cập nhật Deployment + Service
             kubectl apply -f k8s/deployment.yaml -n ${K8S_NS}
             kubectl apply -f k8s/service.yaml    -n ${K8S_NS}
-
-            # Đợi rollout xong
             kubectl rollout status deployment/node-jenkins-demo -n ${K8S_NS}
-
-            echo "====== Service info ======"
             kubectl get svc node-jenkins-demo-service -n ${K8S_NS}
           '''
         }
