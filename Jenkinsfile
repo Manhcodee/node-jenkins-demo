@@ -19,11 +19,11 @@ spec:
       args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
       resources:
         requests:
+          memory: "128Mi"
+          cpu: "0.1"
+        limits:
           memory: "256Mi"
           cpu: "0.2"
-        limits:
-          memory: "512Mi"
-          cpu: "0.5"
       imagePullPolicy: IfNotPresent
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
@@ -33,11 +33,11 @@ spec:
           mountPath: /kaniko/.docker/
       resources:
         requests:
+          memory: "256Mi"
+          cpu: "0.2"
+        limits:
           memory: "512Mi"
           cpu: "0.5"
-        limits:
-          memory: "1Gi"
-          cpu: "1"
       imagePullPolicy: IfNotPresent
     - name: kubectl
       image: bitnami/kubectl:latest
@@ -45,11 +45,11 @@ spec:
       tty: true
       resources:
         requests:
+          memory: "64Mi"
+          cpu: "0.05"
+        limits:
           memory: "128Mi"
           cpu: "0.1"
-        limits:
-          memory: "256Mi"
-          cpu: "0.2"
       imagePullPolicy: IfNotPresent
   volumes:
     - name: docker-config
@@ -79,15 +79,28 @@ spec:
       steps {
         container('kaniko') {
           sh '''
-            echo "Registry: ${REGISTRY}"
-            echo "Image Repo: ${IMAGE_REPO}"
-            echo "Image Tag: ${IMAGE_TAG}"
-            echo "Build Number: ${env.BUILD_NUMBER}"
+            echo "Debug: Starting Kaniko build at $(date)"
+            echo "Registry: ${REGISTRY:-'not set'}"
+            echo "Image Repo: ${IMAGE_REPO:-'not set'}"
+            echo "Image Tag: ${IMAGE_TAG:-'not set'}"
+            echo "Build Number: ${env.BUILD_NUMBER:-'not set'}"
+            if [ -z "${REGISTRY}" ] || [ -z "${IMAGE_REPO}" ] || [ -z "${IMAGE_TAG}" ]; then
+              echo "Error: One or more required environment variables are empty"
+              exit 1
+            fi
+            DEST1="${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}"
+            DEST2="${REGISTRY}/${IMAGE_REPO}:${env.BUILD_NUMBER:-default}"
+            echo "Destination 1: $DEST1"
+            echo "Destination 2: $DEST2"
+            if [ -z "$DEST1" ] || [ -z "$DEST2" ]; then
+              echo "Error: Destination parameters are empty"
+              exit 1
+            fi
             /kaniko/executor \
               --context="$WORKSPACE" \
               --dockerfile="$WORKSPACE/Dockerfile" \
-              --destination="${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}" \
-              --destination="${REGISTRY}/${IMAGE_REPO}:${env.BUILD_NUMBER}" \
+              --destination="$DEST1" \
+              --destination="$DEST2" \
               --cache=true \
               --verbosity=debug
           '''
